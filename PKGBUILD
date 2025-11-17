@@ -1,4 +1,4 @@
-# Maintainer: Mark Karlinsky <mark.devnull@gmail.com>
+# Maintainer: Mark Karlinsk <mark.devnull@gmail.com>
 pkgname=niri-dinit
 pkgver=25.08
 pkgrel=4

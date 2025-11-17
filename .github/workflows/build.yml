@@ -1,52 +1,50 @@
-name: Build niri-dinit (Artix Linux)
+name: Build niri-dinit (Artix)
 
 on:
   push:
     branches: [ main ]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build (Artix)
     runs-on: ubuntu-latest
-
     container:
       image: artixlinux/artixlinux:base-devel
-      options: --privileged
+      options: --security-opt seccomp=unconfined
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up build user (non-root for makepkg)
+      - name: Update system & install build deps
         run: |
-          pacman -Sy --noconfirm
           pacman -Syu --noconfirm
 
-          # Add build user
-          useradd -m builduser
-          echo 'builduser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-
-          # Give write permission to workspace
-          chown -R builduser:builduser /__w
-
-      - name: Install dependencies
-        run: |
-          sudo pacman -S --noconfirm git base-devel dinit dinit-user-services
-          sudo pacman -S --noconfirm \
+          # pkg depends
+          pacman -S --noconfirm --needed \
             libpipewire pango glib2 cairo libdisplay-info mesa \
             seatd udev libinput pixman libxkbcommon gcc-libs glibc \
             dbus-dinit-user
-          sudo pacman -S --noconfirm cargo rust rustup clang
 
-      - name: Build package as builduser
+          # make deps
+          pacman -S --noconfirm --needed \
+            git cargo rust rustup clang base-devel
+
+      - name: Add build user (required for makepkg)
+        run: |
+          useradd -m builduser
+          echo "builduser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown -R builduser:builduser .
+
+      - name: Build package
         run: |
           sudo -u builduser bash -lc "
-            cd $PWD
             rustup default stable
-            makepkg --noconfirm --cleanbuild --syncdeps
+            makepkg -sf --noconfirm
           "
 
-      - name: Upload built pkg
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: niri-dinit-artix

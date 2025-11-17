@@ -1,0 +1,52 @@
+name: Build niri-dinit (Artix Linux)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: artixlinux/artixlinux:base-devel
+      options: --privileged
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize Artix build environment
+        run: |
+          pacman -Sy --noconfirm
+          pacman -Syu --noconfirm
+
+          # Required base tools
+          pacman -S --noconfirm git base-devel dinit dinit-user-services
+
+          # Extra dependencies required by the PKGBUILD
+          pacman -S --noconfirm \
+            libpipewire pango glib2 cairo libdisplay-info mesa \
+            libseat udev libinput pixman libxkbcommon gcc-libs glibc \
+            dbus-dinit-user
+
+          # Build dependencies
+          pacman -S --noconfirm \
+            cargo rust rustup clang
+
+      - name: Configure Rust stable toolchain
+        run: |
+          rustup default stable
+
+      - name: Build package
+        run: |
+          # Makepkg requires a clean build directory
+          chmod -R a+w .
+          makepkg --noconfirm --cleanbuild --syncdeps
+
+      - name: Upload built package
+        uses: actions/upload-artifact@v4
+        with:
+          name: niri-dinit-artix-package
+          path: "*.pkg.tar*"

@@ -28,7 +28,7 @@ jobs:
           # Extra dependencies required by the PKGBUILD
           pacman -S --noconfirm \
             libpipewire pango glib2 cairo libdisplay-info mesa \
-            libseat udev libinput pixman libxkbcommon gcc-libs glibc \
+            seatd udev libinput pixman libxkbcommon gcc-libs glibc \
             dbus-dinit-user
 
           # Build dependencies
